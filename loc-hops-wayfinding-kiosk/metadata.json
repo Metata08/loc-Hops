@@ -1,0 +1,5 @@
+{
+  "name": "Loc-Hops Wayfinding Kiosk",
+  "description": "An interactive kiosk prototype designed to help users navigate hospitals in Senegal. It features a clear, accessible, and multilingual interface to guide users from their arrival to their destination, with options to transfer the route to a smartphone or print it.",
+  "requestFramePermissions": []
+}

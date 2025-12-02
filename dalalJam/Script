@@ -1,0 +1,75 @@
+import bpy
+import bmesh
+
+# CONFIGURATION
+FLOOR_ID = 1  # L'ID de votre étage "Rez-de-chaussée" dans la base de données
+OBJ_NAME = "Reseau_Navigation"  # Le nom de votre objet maillage dans Blender
+
+# Récupération de l'objet
+obj = bpy.data.objects.get(OBJ_NAME)
+
+if obj is None:
+    print(f"Erreur : L'objet '{OBJ_NAME}' n'existe pas.")
+else:
+    print("-- DEBUT DU SCRIPT --")
+    print("BEGIN;") # Pour commencer une transaction SQL
+    
+    mesh = obj.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    
+    # Dictionnaire pour mapper l'index Blender -> ID SQL (si vous avez besoin de IDs spécifiques)
+    # Ici on utilise l'index des vertices Blender comme ID temporaire pour lier les arêtes
+    
+    # 1. GÉNÉRER LES NOEUDS (NavNode)
+    print(f"\n-- Insertion des NavNode pour l'étage {FLOOR_ID}")
+    for v in bm.verts:
+        # Coordonnées Blender (v.co.x, v.co.y, v.co.z)
+        # Note: Blender est en mètres par défaut, PostGIS géométrie aussi souvent
+        x = round(v.co.x, 3)
+        y = round(v.co.y, 3)
+        z = round(v.co.z, 3)
+        
+        # Requête SQL
+        # On assume que NavNode a une colonne 'id' auto-incrémentée, 
+        # mais on a besoin de garder une référence pour les arêtes.
+        # Pour l'export, on peut utiliser une table temporaire ou insérer manuellement.
+        
+        # Syntaxe PostGIS : ST_MakePoint(x, y, z) avec SRID 4326 (GPS) ou local (0)
+        # Adaptez le SRID (4326 ici par défaut) selon votre projet
+        sql = f"INSERT INTO \"NavNode\" (geom, floor_id, kind) VALUES (ST_SetSRID(ST_MakePoint({x}, {y}, {z}), 4326), {FLOOR_ID}, 'connector') RETURNING id;"
+        print(f"-- Node Index Blender {v.index} : {sql}")
+
+    # 2. GÉNÉRER LES ARÊTES (NavEdge)
+    print(f"\n-- Insertion des NavEdge")
+    for e in bm.edges:
+        v1_idx = e.verts[0].index
+        v2_idx = e.verts[1].index
+        
+        # Calcul de la longueur (length_m) pour le poids du chemin (Dijkstra)
+        length = round(e.calc_length(), 3)
+        
+        # Attention : Dans un vrai script de prod, il faudrait récupérer les vrais IDs 
+        # générés par l'INSERT des NavNode ci-dessus.
+        # Pour cet exemple, on assume que vous allez faire la correspondance manuellement 
+        # ou que vous insérez les IDs explicitement.
+        
+        # On construit la géométrie de la ligne
+        v1 = e.verts[0].co
+        v2 = e.verts[1].co
+        line_wkt = f"LINESTRINGZ({v1.x:.3f} {v1.y:.3f} {v1.z:.3f}, {v2.x:.3f} {v2.y:.3f} {v2.z:.3f})"
+        
+        sql = f"""INSERT INTO "NavEdge" (node_from_id, node_to_id, length_m, geom, is_accessible) 
+        VALUES (
+            (SELECT id FROM "NavNode" WHERE geom = ST_SetSRID(ST_MakePoint({v1.x:.3f}, {v1.y:.3f}, {v1.z:.3f}), 4326) LIMIT 1), 
+            (SELECT id FROM "NavNode" WHERE geom = ST_SetSRID(ST_MakePoint({v2.x:.3f}, {v2.y:.3f}, {v2.z:.3f}), 4326) LIMIT 1), 
+            {length}, 
+            ST_SetSRID(ST_GeomFromText('{line_wkt}'), 4326), 
+            true
+        );"""
+        
+        print(sql)
+
+    print("COMMIT;")
+    print("-- FIN DU SCRIPT --")
+    
