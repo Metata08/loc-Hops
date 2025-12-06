@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600">
+  <rect fill="#006C35" width="900" height="600"/>
+  <text x="450" y="280" font-family="Arial" font-size="80" fill="white" text-anchor="middle" font-weight="bold">لا إله إلا الله</text>
+  <text x="450" y="360" font-family="Arial" font-size="60" fill="white" text-anchor="middle" font-weight="bold">محمد رسول الله</text>
+</svg>
