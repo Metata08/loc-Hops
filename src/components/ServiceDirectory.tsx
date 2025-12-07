@@ -49,13 +49,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 // Génère une couleur basée sur l'ID du service
 const getServiceColor = (id: string): string => {
-  if (id.includes("urgence") || id.includes("emergency")) return "text-red-500";
-  if (id.includes("cardio")) return "text-red-500";
-  if (id.includes("mater") || id.includes("pediatr")) return "text-pink-500";
-  if (id.includes("radio")) return "text-blue-500";
-  if (id.includes("pharma")) return "text-green-500";
-  if (id.includes("labo")) return "text-purple-500";
-  return "text-primary";
+  if (id.includes("urgence") || id.includes("emergency")) return "bg-[#F0FDFA]";
+  if (id.includes("cardio")) return "bg-[#F0FDFA]";
+  if (id.includes("mater") || id.includes("pediatr")) return "bg-[#F0FDFA]";
+  if (id.includes("radio")) return "bg-[#F0FDFA]";
+  if (id.includes("pharma")) return "bg-[#F0FDFA]";
+  if (id.includes("labo")) return "bg-[#F0FDFA]";
+  return "text-[#0f766e]";
 };
 
 // Génère un temps d'attente simulé
@@ -208,7 +208,7 @@ const ServiceDirectory = ({
 
       {/* Services Carousel */}
       <div className="flex-1 px-6 py-4">
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex items-center justify-center gap-8">
           {/* Left Arrow */}
           <button
             onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
@@ -219,19 +219,19 @@ const ServiceDirectory = ({
           </button>
 
           {/* Service Cards */}
-          <div className="flex gap-6 justify-center">
+          <div className="grid grid-cols-3 gap-8 w-[90%] h-[200px] justify-between">
             {currentServices.map((service) => {
               const IconComponent = service.icon;
               return (
                 <div
                   key={service.id}
                   onClick={() => onServiceSelect(service.id)}
-                  className="w-56 bg-card rounded-3xl border-2 border-border p-6 cursor-pointer hover:border-primary hover:shadow-lg transition-all"
+                  className="w-[100%] bg-card rounded-3xl border-2 border-border p-6 cursor-pointer hover:border-primary hover:shadow-lg transition-all"
                 >
                   {/* Icon and Status */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-                      <IconComponent className={`w-7 h-7 ${service.color}`} />
+                    <div className="w-[15%] h-[60px] rounded-3xl bg-[#0f766e]/10 flex items-center justify-center">
+                      <IconComponent className={`w-[50%] h-[50%] ${service.color}`} />
                     </div>
                     <span
                       className={`text-xs font-bold px-3 py-1 rounded-full ${
@@ -245,7 +245,7 @@ const ServiceDirectory = ({
                   </div>
 
                   {/* Name */}
-                  <h3 className="text-lg font-bold text-foreground mb-2">
+                  <h3 className="text-lg font-bold text-foreground mb-2 text-[#0f766e]">
                     {service.name}
                   </h3>
 
@@ -287,16 +287,27 @@ const ServiceDirectory = ({
           </button>
         </div>
 
-        {/* Pagination Dots */}
-        <div className="flex justify-center gap-2 mt-8">
+        {/* Pagination avec numéros */}
+        <div className="flex justify-center items-center w-[402px] h-[50px] px-[50%] gap-1 mt-8">
           {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentPage(i)}
-              className={`w-3 h-3 rounded-full transition-colors ${
-                i === currentPage ? "bg-primary" : "bg-muted-foreground/30"
-              }`}
-            />
+              className={`
+                flex items-center justify-center 
+                w-[100%] h-[100%] rounded-lg
+                text-sm font-medium
+                transition-all duration-200
+                ${i === currentPage 
+                  ? "bg-primary text-primary-foreground shadow-md" 
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                }
+              `}
+              aria-label={`Page ${i + 1}`}
+              aria-current={i === currentPage ? "page" : undefined}
+            >
+              {i + 1}
+            </button>
           ))}
         </div>
 
@@ -311,8 +322,8 @@ const ServiceDirectory = ({
       {/* Bottom Bar fixed et flottant */}
       <div className="fixed bottom-0 left-0  bg-background/90 backdrop-blur-md  px-6 py-4 flex items-center justify-between">
         {/* Settings */}
-        <button className="w-14 h-14 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-          <Settings className="w-8 h-8" />
+        <button className="w-[10%] h-[10%] rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+          <Settings className="w-[100%] h-[100%]" />
         </button>
 {/*  */}
         {/* Spacer for AI Button (rendered by parent) */}

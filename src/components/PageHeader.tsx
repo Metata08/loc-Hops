@@ -63,7 +63,7 @@ const PageHeader = ({ title, language, onBack, onHome }: PageHeaderProps) => {
       </div>
       
       {/* Green banner with title and navigation */}
-      <div className="flex items-center gap-4 px-6 py-2 bg-[#0f766e] w-[95%] mx-auto rounded-b-[20px]">
+      <div className="flex items-center gap-4 px-6 py-2 bg-[#0A714E] w-[95%] mx-auto rounded-b-[20px]">
         {/* Back button */}
         <button
           onClick={onBack}
