@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Loc-Hops</string>
+    <string name="title_activity_main">Loc-Hops</string>
+    <string name="package_name">com.loc.hops</string>
+    <string name="custom_url_scheme">com.loc.hops</string>
+</resources>

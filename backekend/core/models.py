@@ -121,9 +121,9 @@ class Language(models.Model):
         return self.name
 
 class ServiceTranslation(models.Model):
-    # Mapping composite PK (service_id, lang_code) is tricky in Django.
-    # Using OneToOneField as primary key as requested, though it implies 1:1.
-    service = models.OneToOneField(Service, on_delete=models.CASCADE, primary_key=True, db_column='service_id')
+    # Workaround for composite PK (service_id, lang_code):
+    # Set service as primary_key=True to satisfy Django, use ForeignKey for one-to-many.
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, primary_key=True, related_name='service_translations', db_column='service_id')
     language = models.ForeignKey(Language, on_delete=models.CASCADE, related_name='service_translations', db_column='lang_code')
     label = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
@@ -134,8 +134,8 @@ class ServiceTranslation(models.Model):
         unique_together = (('service', 'language'),)
 
 class PoiTranslation(models.Model):
-    # Similar workaround for composite PK
-    poi = models.OneToOneField(Poi, on_delete=models.CASCADE, primary_key=True, db_column='poi_id')
+    # Workaround for composite PK
+    poi = models.ForeignKey(Poi, on_delete=models.CASCADE, primary_key=True, related_name='poi_translations', db_column='poi_id')
     language = models.ForeignKey(Language, on_delete=models.CASCADE, related_name='poi_translations', db_column='lang_code')
     label = models.CharField(max_length=255)
 
