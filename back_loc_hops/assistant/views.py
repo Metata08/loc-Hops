@@ -17,45 +17,121 @@ def strip_accents(s: str) -> str:
     )
 
 
-def extract_query_from_message(message: str) -> str:
+def extract_query_from_message(message: str, language: str = "fr") -> str:
+    """
+    Extrait le nom du service à partir d'une phrase utilisateur.
+    Gère des tournures FR et EN.
+    """
     msg = message.lower()
 
     # Expressions à enlever au début du message
-    patterns_to_remove = [
+    patterns_fr = [
         r"où est ", r"ou est ",
         r"où sont ", r"ou sont ",
 
-        r"je cherche le service ",   # nouveau
-        r"je cherche le ",           # plus général
-        r"je cherche la ",           # plus général
-        r"je cherche les ",          # plus général
+        r"je cherche le service ",
+        r"je cherche le ",
+        r"je cherche la ",
+        r"je cherche les ",
         r"je cherche ",
 
-        r"je veux aller au service ",   # nouveau
-        r"je veux aller au ",           # nouveau
+        r"je veux aller au service ",
+        r"je veux aller au ",
         r"je veux aller à ", r"je veux aller a ",
 
-        r"je veux me rendre au service ",  # nouveau
-        r"je veux me rendre au ",          # nouveau
+        r"je veux me rendre au service ",
+        r"je veux me rendre au ",
         r"je veux me rendre à ", r"je veux me rendre a ",
 
         r"dirige[- ]?moi vers ",
         r"c'est où ", r"c est ou ",
         r"où se trouve ", r"ou se trouve ",
     ]
-    for p in patterns_to_remove:
+
+    patterns_en = [
+        r"where is ",
+        r"where are ",
+        r"i am looking for ",
+        r"i'm looking for ",
+        r"take me to ",
+        r"guide me to ",
+        r"how do i get to ",
+        r"how can i get to ",
+        r"how can i go to ",
+        r"where can i find ",
+    ]
+
+    # On enlève TOUS les patterns FR + EN
+    for p in (patterns_fr + patterns_en):
         msg = re.sub(p, "", msg)
 
     msg = msg.strip()
 
-    # Suppression des articles au début
-    msg = re.sub(r"^(la |le |les |l'|au |aux |du |des )", "", msg)
+    # Suppression des articles au début (FR + EN)
+    msg = re.sub(
+        r"^(la |le |les |l'|au |aux |du |des |the |a |an )",
+        "",
+        msg,
+    )
 
     # Nettoyage des ponctuations finales
     msg = msg.strip(" ?!.")
 
     print(f"[DEBUG] terme extrait = '{msg}'")
     return msg
+
+
+def translate_service_term(term: str, language: str = "fr") -> str:
+    """
+    Traduit / normalise certains noms de services anglais
+    vers les labels utilisés dans la base (souvent en français).
+    """
+    norm = strip_accents(term.lower().strip())
+    if language.lower() == "en":
+        # 🧠 À ADAPTER selon les vrais noms dans ta base (poi.type)
+        mapping = {
+            # urgences
+            "emergency": "urgences",
+            "emergencies": "urgences",
+            "emergency room": "urgences",
+            "er": "urgences",
+
+            # radiologie
+            "radiology": "radiologie",
+            "xray": "radiologie",
+            "x-ray": "radiologie",
+            "x ray": "radiologie",
+
+            # laboratoire
+            "lab": "laboratoire",
+            "laboratory": "laboratoire",
+            "blood test": "laboratoire",
+
+            # maternité
+            "maternity": "maternité",
+            "delivery room": "maternité",
+
+            # pharmacie
+            "pharmacy": "pharmacie",
+            "drugstore": "pharmacie",
+
+            # pédiatrie
+            "pediatrics": "pédiatrie",
+            "pediatric": "pédiatrie",
+            "children ward": "pédiatrie",
+
+            # accueil
+            "reception": "accueil",
+            "information desk": "accueil",
+        }
+
+        for key, val in mapping.items():
+            if key in norm:
+                print(f"[DEBUG] traduction service '{norm}' -> '{val}'")
+                return val
+
+    # par défaut, on renvoie le terme original
+    return term
 
 
 def find_poi_by_name(name: str):
@@ -80,8 +156,7 @@ def find_poi_by_name(name: str):
 
         print(f"[DEBUG] compare '{target_norm}' avec '{type_norm}'")
 
-        # On accepte les deux sens : "urgences" in "les urgences"
-        # ou "les urgences" in "urgences"
+        # "urgences" in "les urgences" ou "les urgences" in "urgences"
         if target_norm and (target_norm in type_norm or type_norm in target_norm):
             print("[DEBUG] MATCH pour", type_db)
             return poi
@@ -90,14 +165,27 @@ def find_poi_by_name(name: str):
     return None
 
 
-def find_poi_in_message(message: str):
+def find_poi_in_message(message: str, language: str = "fr"):
     """
     Cherche un POI dont le type apparaît directement dans le message complet
     (en ignorant accents / casse).
-    Exemple : message = 'je veux aller aux urgences'
-              type_db = 'Urgences' → match
+    Pour l'anglais, on peut aussi traduire certains mots clés dans le message.
     """
     norm_msg = strip_accents(message.lower())
+
+    # Si anglais, on remplace quelques termes dans le message
+    if language.lower() == "en":
+        norm_msg = norm_msg.replace("emergency room", "urgences")
+        norm_msg = norm_msg.replace("emergency", "urgences")
+        norm_msg = norm_msg.replace("er", "urgences")
+        norm_msg = norm_msg.replace("radiology", "radiologie")
+        norm_msg = norm_msg.replace("lab", "laboratoire")
+        norm_msg = norm_msg.replace("laboratory", "laboratoire")
+        norm_msg = norm_msg.replace("maternity", "maternité")
+        norm_msg = norm_msg.replace("pharmacy", "pharmacie")
+        norm_msg = norm_msg.replace("pediatrics", "pédiatrie")
+        norm_msg = norm_msg.replace("children ward", "pédiatrie")
+        norm_msg = norm_msg.replace("reception", "accueil")
 
     for poi in Poi.objects.all():
         type_db = poi.type or ""
@@ -114,91 +202,143 @@ def find_poi_in_message(message: str):
     return None
 
 
-def build_reply(message: str):
+def build_reply(message: str, language: str = "fr"):
+    """
+    Construit la réponse en fonction du message et de la langue ("fr" ou "en").
+    """
+    lang = language.lower()
+    if lang not in ("fr", "en"):
+        lang = "fr"  # fallback
+
     msg = message.lower()
 
-    # Salutations
-    if any(x in msg for x in ["bonjour", "salut", "salam", "wa alaykoum"]):
-        return (
-            "Bonjour, je suis l'assistant de localisation de l'hôpital. "
-            "Comment puis je vous aider ?"
-            ,
-            None,
-        )
+    # ---------- Salutations ----------
+    greetings_fr = ["bonjour", "salut", "salam", "wa alaykoum"]
+    greetings_en = ["hello", "hi", "good morning", "good afternoon", "good evening"]
 
-    # Intention de localisation (toutes les phrases de guidage)
-    if any(
-        x in msg
-        for x in [
-            "où est", "ou est",
-            "où sont", "ou sont",
+    if any(x in msg for x in greetings_fr + greetings_en):
+        if lang == "en":
+            return (
+                "Hello, I am the hospital's navigation assistant. "
+                "How can I help you?",
+                None,
+            )
+        else:
+            return (
+                "Bonjour, je suis l'assistant de localisation de l'hôpital. "
+                "Comment puis-je vous aider ?",
+                None,
+            )
 
-            "je cherche le service",
-            "je cherche le",
-            "je cherche la",
-            "je cherche les",
-            "je cherche",
+    # ---------- Intentions de localisation ----------
+    location_triggers_fr = [
+        "où est", "ou est",
+        "où sont", "ou sont",
+        "je cherche le service",
+        "je cherche le",
+        "je cherche la",
+        "je cherche les",
+        "je cherche",
+        "je veux aller au service",
+        "je veux aller au",
+        "je veux aller à", "je veux aller a",
+        "je veux me rendre au service",
+        "je veux me rendre au",
+        "je veux me rendre à", "je veux me rendre a",
+        "c'est où", "c est ou",
+        "où se trouve", "ou se trouve",
+        "dirige-moi vers", "dirige moi vers",
+    ]
 
-            "je veux aller au service",
-            "je veux aller au",
-            "je veux aller à", "je veux aller a",
+    location_triggers_en = [
+        "where is",
+        "where are",
+        "i am looking for",
+        "i'm looking for",
+        "take me to",
+        "guide me to",
+        "how do i get to",
+        "how can i get to",
+        "how can i go to",
+        "where can i find",
+    ]
 
-            "je veux me rendre au service",
-            "je veux me rendre au",
-            "je veux me rendre à", "je veux me rendre a",
+    if any(x in msg for x in (location_triggers_fr + location_triggers_en)):
+        # 1) On extrait le terme
+        raw_query = extract_query_from_message(message, lang)
+        # 2) On traduit si besoin (emergency -> urgences, etc.)
+        query = translate_service_term(raw_query, lang)
 
-            "c'est où", "c est ou",
-            "où se trouve", "ou se trouve",
-            "dirige-moi vers", "dirige moi vers",
-        ]
-    ):
-        # 1) On essaie d'abord avec le terme extrait
-        query = extract_query_from_message(message)
+        print(f"[DEBUG] raw_query='{raw_query}', query_apres_traduction='{query}'")
+
         if not query:
-            return "Quel service ou quelle unité veux-tu trouver exactement ?", None
+            if lang == "en":
+                return "Which service or unit would you like to find?", None
+            else:
+                return "Quel service ou quelle unité souhaitez-vous trouver exactement ?", None
 
         poi = find_poi_by_name(query)
 
-        # 2) Si rien trouvé, on essaie en cherchant le nom du service
-        # directement dans tout le message
+        # 3) Si rien trouvé, on essaie en cherchant directement dans tout le message
         if poi is None:
-            poi = find_poi_in_message(message)
+            poi = find_poi_in_message(message, lang)
 
         if poi:
-            # Info localisation (si tu veux la garder pour debug ou affichage futur)
             if poi.floor_id is not None:
-                localisation = f"à l'étage {poi.floor_id}"
+                localisation_fr = f"à l'étage {poi.floor_id}"
+                localisation_en = f"on floor {poi.floor_id}"
             else:
-                localisation = "dans l'hôpital"
+                localisation_fr = "dans l'hôpital"
+                localisation_en = "inside the hospital"
 
-            extra = " C'est aussi un point d'entrée de l'hôpital." if poi.is_entry_point else ""
+            extra_fr = " C'est aussi un point d'entrée de l'hôpital." if poi.is_entry_point else ""
+            extra_en = " It is also a main entrance of the hospital." if poi.is_entry_point else ""
 
-            # 🔴 Nouveau message adapté au QR code
-            reply = (
-                f"Pour se rendre au service {poi.type}, scannez le code QR suivant "
-                f"pour avoir le chemin correspondant. Merci "
-                
-            )
+            if lang == "en":
+                reply = (
+                    f"To reach the {poi.type} service, please scan the QR code to get the corresponding path. "
+                    f"The service is {localisation_en}.{extra_en}"
+                )
+            else:
+                reply = (
+                    f"Pour se rendre au service {poi.type}, scannez le code QR suivant "
+                    f"pour avoir le chemin correspondant. Le service se trouve {localisation_fr}.{extra_fr}"
+                )
+
             return reply, poi
 
+        # Aucun service trouvé
+        if lang == "en":
+            return (
+                f"The service '{raw_query}' does not exist in this hospital. "
+                "Please check the service name.",
+                None,
+            )
+        else:
+            return (
+                f"Le service '{raw_query}' n'existe pas dans cet hôpital. "
+                "Veuillez vérifier le nom du service s'il vous plaît.",
+                None,
+            )
+
+    # ---------- Par défaut ----------
+    if lang == "en":
         return (
-            f"Le service  '{query}' n'existe pas dans cet hopital. "
-            "Veuillez reVérifier le nom du service s'il vous plait",
+            "I did not understand. Please rephrase your question.",
+            None,
+        )
+    else:
+        return (
+            "Je n'ai pas bien compris. Reformulez votre question s'il vous plaît.",
             None,
         )
 
-    # Par défaut
-    return (
-        "Je n'ai pas bien compris. Reformulez votre question s'il vous plait",
-        None,
-    )
 
-
-@csrf_exempt  # simple pour commencer
+@csrf_exempt
 def chat(request):
     """
     Endpoint : POST /api/assistant/chat/
-    Body : { "message": "Où est la pédiatrie ?" }
+    Body : { "message": "...", "language": "fr" | "en" }
     """
     if request.method != "POST":
         return JsonResponse({"detail": "Method not allowed"}, status=405)
@@ -209,9 +349,11 @@ def chat(request):
         return JsonResponse({"detail": "Invalid JSON"}, status=400)
 
     message = data.get("message", "")
-    print(f"[API] message reçu : {message!r}")
+    language = data.get("language", "fr")
 
-    reply, poi = build_reply(message)
+    print(f"[API] message reçu : {message!r} (lang={language})")
+
+    reply, poi = build_reply(message, language)
 
     poi_data = None
     if poi is not None:
