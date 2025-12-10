@@ -12,6 +12,7 @@ INSERT INTO "building" (code, default_name, hospital_id) VALUES ('B1', 'Batiment
 INSERT INTO "floor" (level_index, name, building_id) VALUES (1, 'Etage 1', (SELECT id FROM "building" WHERE code = 'B1' LIMIT 1));
 
 -- Navigation Graph (Object: Reseau_Navigation)
+
 -- navnodes
 INSERT INTO "navnode" (geom, floor_id, kind) VALUES (ST_SetSRID(ST_Makepoint(69.950, 0.289, 1.000), 4326), (SELECT id FROM "floor" WHERE level_index = 1 LIMIT 1), 'connector');
 INSERT INTO "navnode" (geom, floor_id, kind) VALUES (ST_SetSRID(ST_Makepoint(72.672, -4.660, 1.000), 4326), (SELECT id FROM "floor" WHERE level_index = 1 LIMIT 1), 'connector');
