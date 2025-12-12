@@ -1,7 +1,8 @@
-import { Printer, Smartphone } from "lucide-react";
-import { Language } from "@/i18n/translations";
-import { useTranslation } from "@/hooks/useTranslation";
 import { getServiceName } from "@/hooks/useGLBServices";
+import { useTranslation } from "@/hooks/useTranslation";
+import { Language } from "@/i18n/translations";
+import { Printer, Smartphone } from "lucide-react";
+import { QRCodeSVG } from 'qrcode.react';
 import Hospital3DMap from "./Hospital3DMap";
 import PageHeader from "./PageHeader";
 
@@ -88,23 +89,14 @@ const MapView = ({ service, language, onNavigate }: MapViewProps) => {
 
             {/* QR Code */}
             <div className="flex justify-center mb-4">
-              <div className="w-40 h-40 bg-card border-2 border-border rounded-xl p-3">
-                <div className="w-full h-full grid grid-cols-8 gap-0.5">
-                  {Array.from({ length: 64 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`aspect-square ${
-                        // Create a QR-like pattern
-                        (i < 24 && (i % 8 < 3 || (i < 8 && i > 4) || (i > 15 && i < 19))) ||
-                        (i > 39 && i < 48 && i % 8 < 3) ||
-                        (i > 55 && i % 8 < 3) ||
-                        Math.random() > 0.6
-                          ? "bg-foreground"
-                          : "bg-transparent"
-                      }`}
-                    />
-                  ))}
-                </div>
+              <div className="w-40 h-40 bg-white border-2 border-border rounded-xl p-3 flex items-center justify-center">
+                {/* VRAI QR Code fonctionnel */}
+                <QRCodeSVG
+                  value={`${import.meta.env.PROD ? window.location.origin : "http://192.168.1.49:8080"}/?to=${service}`}
+                  size={140}
+                  level="M"
+                  includeMargin={false}
+                />
               </div>
             </div>
 

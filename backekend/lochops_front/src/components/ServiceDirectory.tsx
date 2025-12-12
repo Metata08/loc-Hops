@@ -1,27 +1,27 @@
-import { useState, useMemo } from "react";
 import {
-  Heart,
-  Baby,
-  Camera,
+  Activity,
+  AlertCircle,
   Ambulance,
+  ArrowUpDown,
+  Baby,
   Building,
-  Settings,
+  Camera,
+  Car,
   ChevronLeft,
   ChevronRight,
-  Stethoscope,
-  Activity,
-  Pill,
-  TestTube,
   Coffee,
-  Car,
-  ArrowUpDown,
+  Heart,
   Loader2,
-  AlertCircle,
+  Pill,
+  Settings,
+  Stethoscope,
+  TestTube,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 
-import { Language } from "@/i18n/translations";
 import { useServices } from "@/contexts/ServicesContext";
-import { getServiceIcon, getServiceName, GLBService } from "@/hooks/useGLBServices";
+import { getServiceIcon, GLBService } from "@/hooks/useGLBServices";
+import { Language } from "@/i18n/translations";
 import PageHeader from "./PageHeader";
 
 interface ServiceDirectoryProps {
@@ -83,17 +83,17 @@ const ServiceDirectory = ({
   // Transforme les services GLB en services affichables
   const displayServices = useMemo(() => {
     return services.map((service: GLBService) => {
-      const iconName = getServiceIcon(service.id);
+      const iconName = getServiceIcon(service.originalName || service.id);
       const IconComponent = iconMap[iconName] || Building;
-      
+
       return {
         id: service.id,
-        name: getServiceName(service.id, language),
+        name: service.name, // Use the name field directly from the service
         originalName: service.originalName,
         icon: IconComponent,
         status: getServiceStatus(service.id),
         waitTime: getWaitTime(service.id),
-        color: getServiceColor(service.id),
+        color: getServiceColor(service.originalName || service.id),
         floor: service.floor,
         building: service.building,
       };
@@ -234,11 +234,10 @@ const ServiceDirectory = ({
                       <IconComponent className={`w-7 h-7 ${service.color}`} />
                     </div>
                     <span
-                      className={`text-xs font-bold px-3 py-1 rounded-full ${
-                        service.status === "OUVERT"
+                      className={`text-xs font-bold px-3 py-1 rounded-full ${service.status === "OUVERT"
                           ? "bg-green-100 text-green-600"
                           : "bg-red-100 text-red-600"
-                      }`}
+                        }`}
                     >
                       • {service.status}
                     </span>
@@ -293,9 +292,8 @@ const ServiceDirectory = ({
             <button
               key={i}
               onClick={() => setCurrentPage(i)}
-              className={`w-3 h-3 rounded-full transition-colors ${
-                i === currentPage ? "bg-primary" : "bg-muted-foreground/30"
-              }`}
+              className={`w-3 h-3 rounded-full transition-colors ${i === currentPage ? "bg-primary" : "bg-muted-foreground/30"
+                }`}
             />
           ))}
         </div>
@@ -314,7 +312,7 @@ const ServiceDirectory = ({
         <button className="w-14 h-14 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
           <Settings className="w-8 h-8" />
         </button>
-{/*  */}
+        {/*  */}
         {/* Spacer for AI Button (rendered by parent) */}
         <div />
       </div>

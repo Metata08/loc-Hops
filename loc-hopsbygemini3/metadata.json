@@ -1,7 +1,0 @@
-{
-  "name": "loc-hopsByGemini3",
-  "description": "Interactive Hospital Kiosk with Voice & AI Assistance",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}

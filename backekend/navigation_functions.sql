@@ -8,10 +8,10 @@ CREATE OR REPLACE FUNCTION calculate_path(start_node_id INT, end_node_id INT)
 RETURNS TABLE (
     seq INT,
     path_seq INT,
-    node INT,
-    edge INT,
-    cost NUMERIC,
-    agg_cost NUMERIC,
+    node BIGINT,
+    edge BIGINT,
+    cost FLOAT,
+    agg_cost FLOAT,
     geom GEOMETRY
 ) AS $$
 BEGIN
@@ -26,12 +26,12 @@ BEGIN
         e.geom
     FROM pgr_dijkstra(
         -- Edges query: Must return id, source, target, cost
-        'SELECT id, node_from_id AS source, node_to_id AS target, length_m AS cost FROM "NavEdge" WHERE is_accessible = true',
+        'SELECT id, node_from_id AS source, node_to_id AS target, length_m AS cost FROM navedge WHERE is_accessible = true',
         start_node_id,
         end_node_id,
         directed := false
     ) AS pgr
-    LEFT JOIN "NavEdge" e ON pgr.edge = e.id
+    LEFT JOIN navedge e ON pgr.edge = e.id
     ORDER BY pgr.seq;
 END;
 $$ LANGUAGE plpgsql;
