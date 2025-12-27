@@ -1,7 +1,6 @@
 /* useGLBServices.ts */
 import { fetchPOIs, fetchServices } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export interface GLBService {
   id: string;
@@ -60,6 +59,9 @@ export function useGLBServices(modelPath: string = "/models/DalalJam.glb") {
         setLoading(true);
 
         // 1. Load GLB Model (Visuals only)
+        // DISABLED: Model is loaded directly in Hospital3DMap component
+        // This avoids duplicate loading and WebGL context issues
+        /*
         const loader = new GLTFLoader();
         console.log(`🔄 Chargement du modèle GLB: ${modelPath}`);
 
@@ -91,6 +93,10 @@ export function useGLBServices(modelPath: string = "/models/DalalJam.glb") {
             }
           );
         });
+        */
+
+        // Skip GLB loading in this hook - it's handled by Hospital3DMap
+        setModelLoaded(true); // Mark as loaded to avoid fallback data
 
         // 2. Fetch Data from Backend
         console.log("🔄 Récupération des données depuis le backend...");
@@ -202,14 +208,32 @@ export function getServicePositions(services: GLBService[]) {
 }
 
 export function getServiceName(id: string, lang: "fr" | "en" | "wo" | "ar" = "fr") {
-  // This might need adjustment depending on how we want to handle names now
-  // For now, simple lookup or return ID
+  // Try to find mapping by checking if ID matches any mapping keys
+  for (const [key, translations] of Object.entries(serviceNameMappings)) {
+    if (id.toLowerCase().includes(key.toLowerCase())) {
+      return translations[lang];
+    }
+  }
+
+  // If no mapping found, return the ID (fallback)
   return id;
 }
 
 export function getServiceIcon(id: string): string {
-  // Simplified icon logic
-  const lowerId = id.toLowerCase();
-  // ... (keep existing logic if possible, or map from DB fields)
-  return "Building";
+  // Map service IDs to icon names based on keywords
+  const idLower = id.toLowerCase();
+
+  if (idLower.includes('urgence') || idLower.includes('emergency')) return 'Ambulance';
+  if (idLower.includes('cardio') || idLower.includes('heart')) return 'Heart';
+  if (idLower.includes('mater') || idLower.includes('baby') || idLower.includes('pediatr')) return 'Baby';
+  if (idLower.includes('radio') || idLower.includes('camera')) return 'Camera';
+  if (idLower.includes('pharma') || idLower.includes('pill')) return 'Pill';
+  if (idLower.includes('labo') || idLower.includes('test')) return 'TestTube';
+  if (idLower.includes('consult') || idLower.includes('steth')) return 'Stethoscope';
+  if (idLower.includes('chirur') || idLower.includes('surgery') || idLower.includes('activity')) return 'Activity';
+  if (idLower.includes('cafe') || idLower.includes('coffee')) return 'Coffee';
+  if (idLower.includes('park') || idLower.includes('car')) return 'Car';
+  if (idLower.includes('ascen') || idLower.includes('elev') || idLower.includes('arrow')) return 'ArrowUpDown';
+
+  return 'Building'; // Default icon
 }

@@ -78,16 +78,16 @@ class NavigationSessionViewSet(viewsets.ModelViewSet):
             with connection.cursor() as cursor:
                 # 1. Find nearest node to Start POI
                 cursor.execute("""
-                    SELECT id FROM "NavNode" 
-                    ORDER BY geom <-> (SELECT geom FROM "POI" WHERE id = %s) 
+                    SELECT id FROM navnode 
+                    ORDER BY geom <-> (SELECT geom FROM poi WHERE id = %s) 
                     LIMIT 1
                 """, [from_poi_id])
                 start_node = cursor.fetchone()
 
                 # 2. Find nearest node to End POI
                 cursor.execute("""
-                    SELECT id FROM "NavNode" 
-                    ORDER BY geom <-> (SELECT geom FROM "POI" WHERE id = %s) 
+                    SELECT id FROM navnode 
+                    ORDER BY geom <-> (SELECT geom FROM poi WHERE id = %s) 
                     LIMIT 1
                 """, [to_poi_id])
                 end_node = cursor.fetchone()

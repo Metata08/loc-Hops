@@ -1,0 +1,11 @@
+# Django Framework
+Django>=6.0,<7.0
+
+# PostgreSQL adapter
+psycopg2-binary>=2.9.9
+
+# CORS headers for API
+django-cors-headers>=4.3.0
+
+# Optional but recommended
+python-dotenv>=1.0.0  # For environment variables management

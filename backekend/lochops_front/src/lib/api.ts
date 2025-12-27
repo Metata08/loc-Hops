@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Configuration de base de l'API
-// Assurez-vous que l'URL correspond à votre backend Django
-const API_URL = 'http://localhost:8000/api';
+// Configuration dynamique de l'URL de l'API
+// Utilise l'IP/Hostname de la page actuelle (localhost ou 192.168.x.x) pour contacter le backend sur le port 8000
+const hostname = window.location.hostname;
+const API_URL = `http://${hostname}:8000/api`;
 
 export const api = axios.create({
     baseURL: API_URL,
@@ -114,6 +115,24 @@ export const fetchNavigationRoute = async (fromPoiId: number | string, toPoiId: 
             from: fromPoiId,
             to: toPoiId,
         },
+    });
+    return response.data;
+};
+
+export interface ChatResponse {
+    reply: string;
+    poi: {
+        id: number;
+        type: string;
+        floor_id?: number | null;
+        is_entry_point: boolean;
+    } | null;
+}
+
+export const sendMessage = async (message: string, language: string = 'fr'): Promise<ChatResponse> => {
+    const response = await api.post<ChatResponse>('/assistant/chat/', {
+        message,
+        language
     });
     return response.data;
 };

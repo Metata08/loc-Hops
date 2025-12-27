@@ -17,7 +17,8 @@ SECRET_KEY = env('SECRET_KEY')
 
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
+# Autoriser tout le monde en debug pour éviter les erreurs 400 sur mobile
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', '192.168.1.49', '*'])
 
 # Application definition
 
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'rest_framework_gis',
     'corsheaders',
     'core',
+    'assistant',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +51,11 @@ MIDDLEWARE = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://localhost:5173",
+    "http://192.168.1.49:8080",  # Frontend mobile
 ]
+
+# En développement, on peut être plus large si l'IP change
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Si DEBUG=True, autoriser tout (plus simple pour le test)
 
 ROOT_URLCONF = 'lochops_backend.urls'
 

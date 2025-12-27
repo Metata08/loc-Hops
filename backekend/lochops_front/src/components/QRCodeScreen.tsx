@@ -1,12 +1,12 @@
-import { ArrowLeft, Download, Share2, Printer, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Language } from "@/i18n/translations";
-import { useTranslation } from "@/hooks/useTranslation";
-import LanguageSwitcher from "./LanguageSwitcher";
-import { QRCodeSVG } from 'qrcode.react';
-import { useState, useRef } from 'react';
 import { toast } from "@/components/ui/use-toast";
+import { useTranslation } from "@/hooks/useTranslation";
+import { Language } from "@/i18n/translations";
+import { ArrowLeft, Check, Copy, Download, Printer, Share2 } from "lucide-react";
+import { QRCodeSVG } from 'qrcode.react';
+import { useRef, useState } from 'react';
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface QRCodeScreenProps {
   service: string;
@@ -19,105 +19,108 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
   const { t } = useTranslation(language);
   const [copied, setCopied] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
-  
+
   // Données du service avec URLs
   const serviceInfo = {
-    radiologie: { 
-      nameKey: "radiology", 
-      building: t("buildingB"), 
+    radiologie: {
+      nameKey: "radiology",
+      building: t("buildingB"),
       floor: t("floor1"),
       url: "https://hospital.com/navigation/radiologie",
       color: "#3B82F6"
     },
-    maternite: { 
-      nameKey: "maternity", 
-      building: t("buildingD"), 
+    maternite: {
+      nameKey: "maternity",
+      building: t("buildingD"),
       floor: t("floor3"),
       url: "https://hospital.com/navigation/maternite",
       color: "#EC4899"
     },
-    urgences: { 
-      nameKey: "emergency", 
-      building: t("buildingA"), 
+    urgences: {
+      nameKey: "emergency",
+      building: t("buildingA"),
       floor: t("groundFloor"),
       url: "https://hospital.com/navigation/urgences",
       color: "#EF4444"
     },
-    reception: { 
-      nameKey: "reception", 
-      building: t("buildingA"), 
+    reception: {
+      nameKey: "reception",
+      building: t("buildingA"),
       floor: t("groundFloor"),
       url: "https://hospital.com/navigation/reception",
       color: "#10B981"
     },
-    cardiologie: { 
-      nameKey: "cardiology", 
-      building: t("buildingC"), 
+    cardiologie: {
+      nameKey: "cardiology",
+      building: t("buildingC"),
       floor: t("floor2"),
       url: "https://hospital.com/navigation/cardiologie",
       color: "#8B5CF6"
     },
-    consultation: { 
-      nameKey: "consultation", 
-      building: t("buildingA"), 
+    consultation: {
+      nameKey: "consultation",
+      building: t("buildingA"),
       floor: t("floor1"),
       url: "https://hospital.com/navigation/consultation",
       color: "#F59E0B"
     },
-    pharmacie: { 
-      nameKey: "pharmacy", 
-      building: t("buildingA"), 
+    pharmacie: {
+      nameKey: "pharmacy",
+      building: t("buildingA"),
       floor: t("groundFloor"),
       url: "https://hospital.com/navigation/pharmacie",
       color: "#06B6D4"
     },
-    laboratoire: { 
-      nameKey: "laboratory", 
-      building: t("buildingB"), 
+    laboratoire: {
+      nameKey: "laboratory",
+      building: t("buildingB"),
       floor: t("groundFloor"),
       url: "https://hospital.com/navigation/laboratoire",
       color: "#6366F1"
     },
-    chirurgie: { 
-      nameKey: "surgery", 
-      building: t("buildingC"), 
+    chirurgie: {
+      nameKey: "surgery",
+      building: t("buildingC"),
       floor: t("floor4"),
       url: "https://hospital.com/navigation/chirurgie",
       color: "#DC2626"
     },
   };
 
+  // Récupérer l'URL de base (en prod: domaine réel, en dev: IP locale)
+  // Utilisation de l'IP détectée 192.168.1.49 pour le test local
+  const baseUrl = import.meta.env.PROD ? window.location.origin : "http://192.168.1.49:8080";
+
+  // URL directe vers le service sur la page mobile
+  const serviceUrl = `${baseUrl}/mobile?to=${service}`; // On utilise le paramètre 'to' pour la navigation
+
   const info = serviceInfo[service as keyof typeof serviceInfo] || serviceInfo.radiologie;
   const serviceName = t(info.nameKey as any);
-  const qrData = JSON.stringify({
-    service: serviceName,
-    building: info.building,
-    floor: info.floor,
-    url: info.url,
-    timestamp: new Date().toISOString()
-  });
+
+  // Le QR Code doit contenir l'URL directe pour être scannable facilement
+  const qrData = serviceUrl;
 
   const handleDownload = () => {
     const svg = document.querySelector('.qr-code svg');
     if (!svg) return;
-    
+
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       ctx?.drawImage(img, 0, 0);
-      
+
       const pngFile = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
       downloadLink.download = `qr-code-${serviceName.toLowerCase().replace(/\s+/g, '-')}.png`;
       downloadLink.href = pngFile;
       downloadLink.click();
     };
-    
+
     img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
   };
 
@@ -127,7 +130,7 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
         await navigator.share({
           title: `${serviceName} - ${t("qrNavigation")}`,
           text: `${t("scanMessage")}`,
-          url: info.url,
+          url: serviceUrl,
         });
       } catch (err) {
         console.log('Error sharing:', err);
@@ -140,7 +143,7 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(info.url);
+      await navigator.clipboard.writeText(serviceUrl);
       setCopied(true);
       toast({
         title: t("confirm"),
@@ -155,7 +158,7 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
   const handlePrint = () => {
     const printContent = qrRef.current?.innerHTML;
     if (!printContent) return;
-    
+
     const printWindow = window.open('', '_blank');
     printWindow?.document.write(`
       <html>
@@ -273,14 +276,14 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
                   }}
                 />
               </div>
-              
+
               <div className="max-w-md mx-auto space-y-4">
                 <p className="text-sm text-gray-500 font-medium">{t("scanQR")}</p>
-                
+
                 {/* URL copiable */}
                 <div className="flex items-center justify-center gap-2">
-                  <code className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-mono text-gray-700 truncate max-w-xs">
-                    {info.url}
+                  <code className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-mono text-gray-700 truncate max-w-xs block overflow-hidden text-ellipsis">
+                    {serviceUrl}
                   </code>
                   <Button
                     size="sm"
@@ -301,9 +304,9 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
 
           {/* Action Buttons */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="h-16 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
               onClick={handleShare}
             >
@@ -311,9 +314,9 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
               <span className="text-lg font-medium">{t("share")}</span>
             </Button>
 
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="h-16 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
               onClick={handleDownload}
             >
@@ -321,9 +324,9 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
               <span className="text-lg font-medium">{t("download")}</span>
             </Button>
 
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="h-16 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200"
               onClick={handlePrint}
             >
@@ -331,8 +334,8 @@ const QRCodeScreen = ({ service, language, onNavigate, onLanguageChange }: QRCod
               <span className="text-lg font-medium">{t("print")}</span>
             </Button>
 
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="h-16 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-lg hover:shadow-xl transition-all duration-200"
               onClick={() => onNavigate("services")}
             >

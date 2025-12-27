@@ -1,6 +1,7 @@
-import { ArrowLeft, Home, Sun } from "lucide-react";
-import { Language } from "@/i18n/translations";
 import locHopsLogo from "@/assets/loc-hops-logo.png";
+import { useWeather } from "@/hooks/useWeather";
+import { Language } from "@/i18n/translations";
+import { ArrowLeft, Home } from "lucide-react";
 
 interface PageHeaderProps {
   title: string;
@@ -10,21 +11,18 @@ interface PageHeaderProps {
 }
 
 const PageHeader = ({ title, language, onBack, onHome }: PageHeaderProps) => {
+  const { temperature, weatherIcon } = useWeather();
   const now = new Date();
-  const time = now.toLocaleTimeString(language === "fr" ? "fr-FR" : "en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  
-  const dayNames: Record<Language, string[]> = {
-    fr: ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
-    en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    wo: ["Dibeer", "Altine", "Talaata", "Àllarba", "Alxamis", "Àjjuma", "Gaawu"],
-    ar: ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
-  };
-  
-  const dayName = dayNames[language][now.getDay()];
+
+  // const dayNames: Record<Language, string[]> = {
+  //   fr: ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"],
+  //   en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  //   wo: ["Dibeer", "Altine", "Talaata", "Àllarba", "Alxamis", "Àjjuma", "Gaawu"],
+  //   ar: ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"],
+  // };
+
+  // const dayName = dayNames[language][now.getDay()];
+
   const date = now.toLocaleDateString(language === "fr" ? "fr-FR" : "en-US", {
     day: "2-digit",
     month: "2-digit",
@@ -46,22 +44,22 @@ const PageHeader = ({ title, language, onBack, onHome }: PageHeaderProps) => {
       <div className="relative flex justify-between items-center px-8 py-4 mb-20">
         {/* Logo superposé */}
         <div className="absolute left-1/2 top-10  mt-10 -translate-x-1/2 -translate-y-1/2 z-10">
-          <img 
-            src={locHopsLogo} 
-            alt="Loc-Hops" 
+          <img
+            src={locHopsLogo}
+            alt="Loc-Hops"
             className="h-[450px] w-auto object-contain"
           />
         </div>
-        
+
         <span className="text-4xl font-bold text-gray-900">{formatTime(currentTime)}</span>
         <div className="flex items-center gap-3 text-gray-600">
-          <span className="text-2xl">☀️</span>
+          <span className="text-2xl">{weatherIcon}</span>
           {/* la date */}
           <span className="text-base font-medium">{date}</span>
-          <span className="text-base">🌡️ 28°C</span>
+          <span className="text-base">🌡️ {temperature !== null ? `${temperature}°C` : "--°C"}</span>
         </div>
       </div>
-      
+
       {/* Green banner with title and navigation */}
       <div className="flex items-center gap-4 px-6 py-2 bg-[#0f766e] w-[95%] mx-auto rounded-b-[20px]">
         {/* Back button */}
@@ -71,14 +69,14 @@ const PageHeader = ({ title, language, onBack, onHome }: PageHeaderProps) => {
         >
           <ArrowLeft className="w-6 h-6 text-foreground" />
         </button>
-        
+
         {/* Title banner */}
         <div className="flex-1 rounded-full py-4 px-8">
           <h1 className="text-2xl font-bold text-primary-foreground text-center uppercase tracking-wide">
             {title}
           </h1>
         </div>
-        
+
         {/* Home button */}
         <button
           onClick={onHome}
